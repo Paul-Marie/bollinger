@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+
+import  sys
+import  math
+
+def     man_help():
+    print("Bollinger Bands\n")
+    print("USAGE")
+    print("\t./bollinger [-h] period standard_dev indexes_file index_number\n")
+    print("\tperiod\t\tnumber of indexes for the moving average")
+    print("\tstandard_dev\tstandard deviation coefficient to apply")
+    print("\tindexes_file\tfile containing daily indexes")
+    print("\tindex_number\tindex number to compute", end='')
+    print(" moving average and Bollinger bands\n")
+    print("OPTIONS")
+    print("\t-h\t\tprint the usage and quit.")
+
+def     create_tab(buff):
+    buff = buff.split('\n')
+    increment = 0
+    tab = []
+    for i in range(len(buff) - 1):
+        tab.append([])
+    for s in range(len(buff) - 1):
+        i = get_number(buff[s])
+        if i != "0x00":
+            tab[increment] = i
+            increment += 1
+    tab.reverse()
+    return (tab)
+
+def     get_number(char, mode = 0):
+    try:
+        nbr = int(char)
+    except:
+        if (mode == 1):
+            nbr = "0x00"
+            return (nbr)
+        try:
+            nbr = float(char)
+        except:
+            nbr = "0x00"
+            pass
+    return nbr
+
+def     get_mobile_average():
+    result = 0.0
+    i = len(tab) - index - 1
+    while i < (period + len(tab) - index - 1):
+        result += float(tab[i])
+        i += 1
+    mobile_average = float(result) / float(period)
+    return mobile_average
+
+def     get_standard_derivation():
+    result = 0.0
+    i = len(tab) - index - 1
+    while i < (period + len(tab) - index - 1):
+        result += pow(tab[i] - mobile_average, 2)
+        i += 1
+    result /= period
+    standard_derivation = math.sqrt(result)
+    return standard_derivation
+
+def     get_Upper_Band():
+    Upper_Band = mobile_average + (standard_derivation * sd_coef)
+    return Upper_Band
+
+def     get_Lower_Band():
+    Lower_Band = mobile_average - (standard_derivation * sd_coef)
+    return Lower_Band
+
+def     print_input():
+    """This isn't an if forrest..."""
+    if (index == "0x00"):
+        sys.stdout.write(sys.argv[4] + " is not a valid number\n")
+        exit(84)
+    elif (period == "0x00"):
+        sys.stdout.write(sys.argv[1] + " is not a valid number\n")
+        exit(84)
+    elif (sd_coef == "0x00"):
+        sys.stdout.write(sys.argv[2] + " is not a valid number\n")
+        exit(84)
+    elif (period > index):
+        sys.stdout.write("You can't put an period greater than index number...\n")
+        exit(84)
+    elif (index > len(tab)):
+        sys.stdout.write("index number to large\n")
+        exit(84)
+    else:
+        print("INPUT")
+        print("Index: " + "%.0f" % index)
+        print("Period: " + "%.0f" % period)
+        print("SD_coef: " + "%.2f" % sd_coef + "\n")
+
+def     print_output():
+    print("OUTPUT")
+    print("MA: " + "%.2f" % mobile_average)
+    print("SD: " + "%.2f" % standard_derivation)
+    print("B+: " + "%.2f" % Upper_Band)
+    print("B-: " + "%.2f" % Lower_Band)
+
+try:
+    if len(sys.argv) == 2:
+        if sys.argv[1] == "-h":
+            man_help()
+            exit(0)
+        else:
+            sys.stdout.write("Invalid number of argument\n")
+            exit(84)
+    elif len(sys.argv) == 5:
+        try:
+            fd = open(sys.argv[3], "r")
+            buff = fd.read()
+        except FileNotFoundError:
+            sys.stdout.write("file \"")
+            sys.stdout.write(sys.argv[3])
+            sys.stdout.write("\" not found or not permission\n")
+            exit (84)
+        tab = create_tab(buff)
+        number_row = 0
+        for s in range(len(tab)):
+            if (tab[s]):
+                number_row += 1
+        if number_row == 0:
+            sys.stdout.write("Have u at least planned to put data in this file?\n")
+            exit (84)
+        index = get_number(sys.argv[4], 1)
+        period = get_number(sys.argv[1], 1)
+        sd_coef = get_number(sys.argv[2])
+        if period < 0 or sd_coef < 0:
+            sys.stdout.write("Invalid argument\n")
+            exit(84)
+        mobile_average = get_mobile_average()
+        standard_derivation = get_standard_derivation()
+        Upper_Band = get_Upper_Band()
+        Lower_Band = get_Lower_Band()
+        print_input()
+        print_output()
+    else:
+        sys.stdout.write("Invalid number of argument\n")
+        exit(84)
+except:
+    exit(84)
