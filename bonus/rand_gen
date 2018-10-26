@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+
+import time
+import sys
+import math
+import os
+import random
+
+def     get_number(char, mode = 0):
+    try:
+        nbr = int(char)
+    except:
+        if (mode == 1):
+            nbr = "0x00"
+            return (nbr)
+        try:
+            nbr = float(char)
+        except:
+            nbr = "0x00"
+            pass
+    return nbr
+
+def     create_tab(buff):
+    buff = buff.split('\n')
+    increment = 0
+    tab_tmp = []
+    for i in range(len(buff) - 1):
+        tab_tmp.append([])
+    for s in range(len(buff) - 1):
+        i = get_number(buff[s])
+        if i != "0x00":
+            tab_tmp[increment] = int(i)
+            increment += 1
+    tab = []
+    for s in range(len(tab_tmp) - 1):
+        if tab_tmp[s]:
+            tab.append(tab_tmp[s])
+    tab.reverse()
+    return (tab)
+
+try:
+    fd = open(sys.argv[1], "r")
+    buff = fd.read()
+except:
+    sys.stdout.write("file \"")
+    sys.stdout.write(sys.argv[3])
+    sys.stdout.write("\" not found or not permission\n")
+    exit (84)
+tab = create_tab(buff)
+for i in range(len(tab)):
+    a = random.randint(-20, 20)
+    a = (100 + a) / 100
+    print(a)
+    number = float(tab[i]) * a
+    with open(sys.argv[2], "a") as myfile:
+        myfile.write("%.2f" % number + "\n")

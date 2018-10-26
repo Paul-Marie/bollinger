@@ -1,0 +1,205 @@
+#!/usr/bin/python2.7
+
+import  sys
+import  math
+import  time
+import  random
+from    Tkinter import *
+
+def     man_help():
+    print("Bollinger Bands Bonus\n")
+    print("USAGE")
+    print("\t./bollinger period standard_dev indexes_file index_number\n")
+
+def     create_tab(buff):
+    buff = buff.split('\n')
+    increment = 0
+    tab = []
+    for i in range(len(buff) - 1):
+        tab.append([])
+    for s in range(len(buff) - 1):
+        i = get_number(buff[s])
+        if i != "0x00":
+            tab[increment] = i
+            increment += 1
+    tab.reverse()
+    return (tab)
+
+def     get_number(char, mode = 0):
+    try:
+        nbr = int(char)
+    except:
+        if (mode == 1):
+            nbr = "0x00"
+            return (nbr)
+        try:
+            nbr = float(char)
+        except:
+            nbr = "0x00"
+            pass
+    return nbr
+
+def     get_mobile_average(real):
+    result = 0.0
+    i = len(tab) - index - 1 + real
+    while i < (period + len(tab) - index - 1 + real):
+        result += float(tab[i])
+        i += 1
+    mobile_average = float(result) / float(period)
+    return mobile_average
+
+def     get_standard_derivation(real):
+    result = 0.0
+    i = len(tab) - index - 1 + real
+    while i < (period + len(tab) - index - 1 + real):
+        result += pow(tab[i] - mobile_average, 2)
+        i += 1
+    result /= period
+    standard_derivation = math.sqrt(result)
+    return standard_derivation
+
+def     get_Upper_Band():
+    Upper_Band = mobile_average + (standard_derivation * sd_coef)
+    return Upper_Band
+
+def     get_Lower_Band():
+    Lower_Band = mobile_average - (standard_derivation * sd_coef) / 2
+    return Lower_Band
+
+def     error_handling():
+    """This isn't an if forrest..."""
+    if (index == "0x00"):
+        sys.stdout.write(sys.argv[4] + " is not a valid number\n")
+        exit(84)
+    elif (period == "0x00"):
+        sys.stdout.write(sys.argv[1] + " is not a valid number\n")
+        exit(84)
+    elif (sd_coef == "0x00"):
+        sys.stdout.write(sys.argv[2] + " is not a valid number\n")
+        exit(84)
+    elif (period > index):
+        sys.stdout.write("You can't put an period greater than index number...\n")
+        exit(84)
+    elif (index > len(tab)):
+        sys.stdout.write("index number to large\n")
+        exit(84)
+
+def     print_all_curve():
+    if (len(sampled_tab) > 50):
+        sampled_tab.reverse()
+        upper_tab.reverse()
+        lower_tab.reverse()
+        point_tab.reverse()
+        sampled_tab.pop()
+        upper_tab.pop()
+        lower_tab.pop()
+        point_tab.pop()
+        sampled_tab.reverse()
+        upper_tab.reverse()
+        lower_tab.reverse()
+        point_tab.reverse()
+    point_tab.append(mobile_average)
+    upper_tab.append(Upper_Band)
+    lower_tab.append(Lower_Band)
+    sampled_tab.append(tab[len(tab) - index - 2 + real])
+    grid_x = 0
+    while grid_x < 3200:
+        if real >= 50:
+            canvas.create_line(grid_x - (((real - 50) % 32) * 32), 0,
+                               grid_x - (((real - 50) % 32) * 32), 640,
+                               fill = "#696969", width = 1)
+        else:
+            canvas.create_line(grid_x, 0,
+                               grid_x, 640,
+                               fill = "#696969", width = 1)
+        if grid_x <= 640:
+            canvas.create_line(0, grid_x, 1600, grid_x, fill = "#696969", width = 1)
+        grid_x += 160
+    i = 1
+    Bx = 0
+    save = sampled_tab[0]
+    while i < len(point_tab) - 1:
+        canvas.create_line(Bx, point_tab[i] / 28000 * 900 - 150,
+                           Bx + 32, point_tab[i + 1] / 28000 * 900 - 150,
+                           fill = "#34DAFF", width = 3)
+        canvas.create_line(Bx, sampled_tab[i] / 28000 * 900 - 150,
+                           Bx + 32, sampled_tab[i + 1] / 28000 * 900 - 150,
+                           fill = "#000000", width = 3)
+        canvas.create_line(Bx, upper_tab[i] / 28000 * 900 - 150,
+                           Bx + 32, upper_tab[i + 1] / 28000 * 900 - 150,
+                           fill = "#FFFF00", width = 3)
+        canvas.create_line(Bx, lower_tab[i] / 28000 * 900 - 150,
+                           Bx + 32, lower_tab[i + 1] / 28000 * 900 - 150,
+                           fill = "#FFFF00", width = 3)
+
+
+
+
+        if sampled_tab[i + 1] > save:
+            canvas.create_line(Bx + 16, save / 28000 * 900 - 150,
+                               Bx + 16, sampled_tab[i + 1] / 28000 * 900 - 150,
+                               fill = "#FF0000", width = 16)
+            canvas.create_line(Bx + 16, save / 28000 * 900 - 160,
+                               Bx + 16, sampled_tab[i + 1] / 28000 * 900 - 140,
+                               fill = "#FF0000", width = 1)
+        else:
+            canvas.create_line(Bx + 16, save / 28000 * 900 - 150,
+                               Bx + 16, sampled_tab[i + 1] / 28000 * 900 - 150,
+                               fill = "#66FF00", width = 16)
+            canvas.create_line(Bx + 16, save / 28000 * 900 - 160,
+                               Bx + 16, sampled_tab[i + 1] / 28000 * 900 - 140,
+                               fill = "#66FF00", width = 1)
+        save = sampled_tab[i + 1]
+        Bx += 32
+        i += 1
+
+if len(sys.argv) == 2:
+    if sys.argv[1] == "-h":
+        man_help()
+        exit(0)
+elif len(sys.argv) == 5:
+    try:
+        fd = open(sys.argv[3], "r")
+        buff = fd.read()
+    except:
+        sys.stdout.write("file \"")
+        sys.stdout.write(sys.argv[3])
+        sys.stdout.write("\" not found or not permission\n")
+        exit (84)
+    tab = create_tab(buff)
+    number_row = 0
+    for s in range(len(tab)):
+        if (tab[s]):
+            number_row += 1
+    if number_row == 0:
+        sys.stdout.write("Have u at least planned to put data in this file?\n")
+        exit (84)
+    index = get_number(sys.argv[4], 1)
+    period = get_number(sys.argv[1])
+    sd_coef = get_number(sys.argv[2])
+    error_handling()
+    fenetre = Tk()
+    fenetre.title("Trading Pro")
+    canvas = Canvas(fenetre, width = 1600, height = 1080, background="black")
+    background_image = PhotoImage(file = "surface_dark_background_texture.png")
+    canvas.create_image(0, 0, anchor = NW, image = background_image)
+    canvas.pack()
+    point_tab = []
+    upper_tab = []
+    lower_tab = []
+    sampled_tab = []
+    real = 0
+    while real + 1:
+        mobile_average = get_mobile_average(real)
+        standard_derivation = get_standard_derivation(real)
+        Upper_Band = get_Upper_Band()
+        Lower_Band = get_Lower_Band()
+        canvas.delete("all")
+        canvas.create_image(0, 0, anchor = NW, image = background_image)
+        print_all_curve()
+        canvas.update()
+        time.sleep(0.5)
+        real += 1
+else:
+    sys.stdout.write("Invalid number of argument\n")
+    exit(84)
